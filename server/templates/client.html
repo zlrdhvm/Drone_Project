@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>드론 화면</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body, html, div, form {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: nowrap;
+            height: 90vh;
+        }
+
+        .section {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 5px;
+            flex-grow: 1;
+        }
+
+        .title-box {
+            background-color: #8c8c8c;
+            padding: 10px;
+            text-align: center;
+            margin: 0 auto 10px auto;
+            color: white;
+            font-weight: bold;
+            width: 70%;
+            box-sizing: border-box;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+
+        .address-label {
+            border-top: 2px solid #000;
+            border-bottom: 2px solid #000;
+            padding: 5px;
+            text-align: center;
+            width: 20%;
+            margin-right: 5px;
+        }
+
+        .address-value {
+            border-top: 2px solid #000;
+            border-bottom: 2px solid #000;
+            padding: 5px;
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .left-section {
+            width: 25%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .left-section .current-location {
+            background-color: #fff;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        .left-section .current-location .map {
+            height: 300px;
+            width: 100%;
+            background-color: #e0e0e0;
+            margin-bottom: 10px;
+            border: 2px solid #ccc;
+        }
+
+        .left-section .current-location .address {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .left-section .current-location .address .address-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+        }
+
+        .left-section .report-section {
+            background-color: #fff;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            height: 100%;
+            width: 100%;
+        }
+
+        .left-section .report-section .title-box {
+            margin-bottom: 10px;
+        }
+
+        .left-section .report-section .tablet {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+
+        .left-section .report-section .tablet .top-row {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .left-section .report-section .tablet .top-row button {
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+
+        .left-section .report-section .tablet .top-row input[type="text"] {
+            flex-grow: 1;
+            border: 1px solid #ccc;
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .left-section .report-section .tablet textarea {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #ccc;
+            resize: none;
+            padding: 10px;
+            box-sizing: border-box;
+            border-radius: 10px;
+            font-size: 14px;
+            flex-grow: 1;
+        }
+
+        .left-section .report-section .tablet .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .left-section .report-section .tablet .button-container button {
+            padding: 10px 20px;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .middle-section {
+            width: 35%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .middle-section .title-box {
+            margin-bottom: 10px;
+        }
+
+        .middle-section canvas {
+            width: 100%;
+            height: auto;
+            background-color: #e0e0e0;
+            margin-bottom: 10px;
+        }
+
+        .right-section {
+            width: 35%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .right-section .title-box {
+            margin-bottom: 10px;
+        }
+
+        .zoomed-cam-container {
+            width: 100%;
+            height: auto;
+            background-color: #e0e0e0;
+            margin-bottom: 10px;
+        }
+
+        .right-section .current-location {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="section left-section">
+            <div class="title-box">현재 드론 위치</div>
+            <div class="current-location">
+                <div class="map" id="map"></div>
+                <div class="address">
+                    <div class="address-label">주소 :</div>
+                    <div class="address-value" id="address">{{ address }}</div>
+                </div>
+            </div>
+            <div class="report-section">
+                <div class="title-box">112 신고</div>
+                <div class="tablet">
+                    <div class="top-row">
+                        <button id="attach-location-button">위치 첨부</button>
+                        <input type="text" id="location-input" placeholder="위치를 입력하세요.">
+                    </div>
+                    <textarea id="report-content" placeholder="신고 내용을 입력하세요."></textarea>
+                    <div class="button-container">
+                        <button id="send-button">전송하기</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="section middle-section">
+            <div class="title-box">드론 CAM 화면</div>
+            <canvas id="stream-canvas" width="640" height="480"></canvas>
+        </div>
+        <div class="section right-section">
+            <div class="title-box">CAM 확대 된 화면</div>
+            <div class="zoomed-cam-container">
+                <canvas id="zoomed-cam-bottom" width="640" height="480"></canvas>
+            </div>
+        </div>
+    </div>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var latitude = {{ latitude }};
+            var longitude = {{ longitude }};
+            var address = "{{ address }}";
+
+            var map = L.map('map').setView([latitude, longitude], 18);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            var marker = L.marker([latitude, longitude]).addTo(map);
+
+            var canvas = document.getElementById('stream-canvas');
+            var context = canvas.getContext('2d');
+            var zoomedCanvas = document.getElementById('zoomed-cam-bottom');
+            var zoomedContext = zoomedCanvas.getContext('2d');
+            var image = new Image();
+            var gridRows = 3;
+            var gridCols = 4;
+            var colWidth = canvas.width / gridCols;
+            var rowHeight = canvas.height / gridRows;
+            var x1 = 0, y1 = 0;
+            var lastX1 = null, lastY1 = null;
+            var zoomEnabled = false;
+
+            image.onload = function() {
+                context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                updateFaces();
+            };
+
+            function drawGrid() {
+                var width = canvas.width;
+                var height = canvas.height;
+                rowHeight = height / gridRows;
+                colWidth = width / gridCols;
+
+                for (var i = 0; i < gridCols; i++) {
+                    for (var j = 0; j < gridRows; j++) {
+                        var cellX = i * colWidth;
+                        var cellY = j * rowHeight;
+                        context.beginPath();
+                        context.rect(cellX, cellY, colWidth, rowHeight);
+                        context.strokeStyle = 'black';  // 그리드의 색상을 항상 검정색으로 설정
+                        context.stroke();
+                    }
+                }
+            }
+
+            async function fetchDetectedFaces() {
+                try {
+                    const response = await fetch('/detected_faces');
+                    const faces = await response.json();
+                    return faces;
+                } catch (error) {
+                    console.error('Error fetching detected faces:', error);
+                    return [];
+                }
+            }
+
+            function updateFaceBoxes(faces) {
+                context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                drawGrid();
+                faces.forEach(face => {
+                    context.beginPath();
+                    context.rect(face.x, face.y, face.w, face.h);
+                    context.lineWidth = 2;
+                    context.strokeStyle = 'blue';
+                    context.stroke();
+                });
+                if (zoomEnabled) {
+                    updateZoomedCanvas();
+                }
+            }
+
+            async function updateFaces() {
+                const faces = await fetchDetectedFaces();
+                updateFaceBoxes(faces);
+            }
+
+            function fetchStream() {
+                image.src = "{{ url_for('video_feed') }}";
+            }
+
+            function updateZoomedCanvas() {
+                zoomedContext.clearRect(0, 0, zoomedCanvas.width, zoomedCanvas.height);
+
+                // 원본 이미지에서 확대할 영역을 계산
+                var sx = x1 * (image.naturalWidth / canvas.width);
+                var sy = y1 * (image.naturalHeight / canvas.height);
+                var sw = colWidth * (image.naturalWidth / canvas.width);
+                var sh = rowHeight * (image.naturalHeight / canvas.height);
+
+                var dx = 0;
+                var dy = 0;
+                var dw = zoomedCanvas.width;
+                var dh = zoomedCanvas.height;
+
+                if (image.complete && image.naturalWidth !== 0) {
+                    zoomedContext.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
+                }
+            }
+
+            canvas.addEventListener('click', function(event) {
+                var rect = canvas.getBoundingClientRect();
+                var x = event.clientX - rect.left;
+                var y = event.clientY - rect.top;
+
+                var col = Math.floor(x / colWidth);
+                var row = Math.floor(y / rowHeight);
+
+                x1 = col * colWidth;
+                y1 = row * rowHeight;
+
+                if (lastX1 === x1 && lastY1 === y1) {
+                    zoomEnabled = false;
+                    zoomedCanvas.style.visibility = 'hidden';
+                    lastX1 = null;
+                    lastY1 = null;
+                } else {
+                    zoomEnabled = true;
+                    zoomedCanvas.style.visibility = 'visible';
+                    updateZoomedCanvas();
+                    lastX1 = x1;
+                    lastY1 = y1;
+                }
+            });
+
+            setInterval(fetchStream, 1000);
+            setInterval(updateFaces, 1000);
+
+            document.getElementById('attach-location-button').addEventListener('click', function() {
+                document.getElementById('location-input').value = address;
+            });
+
+            document.getElementById('send-button').addEventListener('click', function() {
+                var reportContent = document.getElementById('report-content').value;
+                var location = document.getElementById('location-input').value;
+
+                if (!reportContent.trim()) {
+                    alert('신고 내용을 입력하세요.');
+                    return;
+                }
+
+                if (!location.trim()) {
+                    alert('위치를 입력하세요.');
+                    return;
+                }
+
+                var data = {
+                    reportContent: reportContent,
+                    location: location
+                };
+
+                fetch('/send_report', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('신고가 성공적으로 전송되었습니다.');
+                    } else {
+                        alert('신고 전송에 실패하였습니다.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('신고 전송 중 오류가 발생하였습니다.');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
